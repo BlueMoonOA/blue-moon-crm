@@ -1,8 +1,15 @@
+﻿# Node / Next.js
 node_modules/
 .next/
-.env
-uploads/
-*.log
-.DS_Store
+out/
+dist/
+.vercel/
 .vscode/
-coverage/
+.DS_Store
+
+# Env & local data
+.env
+.env.*
+uploads/
+prisma/*.db
+prisma/*.db-journal
