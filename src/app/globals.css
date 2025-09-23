@@ -1,0 +1,98 @@
+/* --- Top nav look/feel --- */
+.site-nav {
+  border-bottom: 1px solid #e5e7eb;
+  background: #fff;
+}
+.site-nav__inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 10px 16px;
+  display: flex;
+  gap: 12px;
+  justify-content: center; /* center the buttons */
+  align-items: center;
+}
+.nav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+  font-weight: 500;
+  line-height: 1;
+  text-decoration: none;
+  color: #111827;
+  transition: box-shadow .15s ease, transform .05s ease;
+}
+.nav-btn:hover {
+  box-shadow: 0 1px 0 rgba(0,0,0,.06), 0 1px 8px rgba(0,0,0,.06);
+}
+.nav-btn:active { transform: translateY(1px); }
+.nav-btn.is-active {
+  background: #111827;
+  color: #fff;
+  border-color: #111827;
+}
+
+/* --- Schedule shell layout --- */
+.schedule-shell {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 16px;
+  display: grid;
+  grid-template-columns: 260px 1fr; /* sidebar + main grid */
+  gap: 16px;
+  min-height: calc(100vh - 60px); /* fill under the nav */
+  background: #fff;
+}
+.schedule-sidebar {
+  display: grid;
+  grid-template-rows: auto 1fr; /* calendar at top, legend fills to bottom */
+  gap: 16px;
+  position: relative;
+}
+.legend-panel {
+  align-self: end;          /* stick to bottom of sidebar */
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #fafafa;
+}
+.legend-row {
+  display: grid;
+  grid-template-columns: 16px 1fr;
+  gap: 8px;
+  align-items: center;
+  font-size: 12px;
+  padding: 3px 0;
+}
+.legend-dot {
+  width: 12px; height: 12px; border-radius: 999px;
+}
+
+/* simple calendar visuals */
+.mini-cal {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 10px;
+  background: #fff;
+}
+.mini-cal__hdr {
+  display: flex; justify-content: space-between; align-items: center;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.mini-cal__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+.mini-cal__cell {
+  text-align: center; padding: 6px 0; border-radius: 6px; font-size: 12px;
+}
+.mini-cal__cell.is-today { outline: 1px solid #111827; }
+.mini-cal__cell.is-selected { background: #111827; color: #fff; }
+.mini-cal__dow { font-size: 11px; color: #6b7280; font-weight: 600; }
+

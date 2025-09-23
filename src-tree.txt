@@ -1,0 +1,118 @@
+Folder PATH listing for volume Acer
+Volume serial number is 3C03-63CC
+C:\USERS\BAGSG\BLUE-MOON-CRM\SRC
+¦   middleware.ts
+¦   providers.tsx
+¦   
++---app
+¦   ¦   favicon.ico
+¦   ¦   globals.css
+¦   ¦   layout.tsx
+¦   ¦   page.tsx
+¦   ¦   providers.tsx
+¦   ¦   
+¦   +---api
+¦   ¦   +---clients
+¦   ¦   ¦   +---[id]
+¦   ¦   ¦       +---files
+¦   ¦   ¦               route.ts
+¦   ¦   ¦               
+¦   ¦   +---files
+¦   ¦   ¦   +---[fileId]
+¦   ¦   ¦           route.ts
+¦   ¦   ¦           
+¦   ¦   +---proposals
+¦   ¦   ¦   +---[id]
+¦   ¦   ¦       +---status
+¦   ¦   ¦               route.ts
+¦   ¦   ¦               
+¦   ¦   +---schedule
+¦   ¦       ¦   route.ts
+¦   ¦       ¦   
+¦   ¦       +---day
+¦   ¦       ¦       route.ts
+¦   ¦       ¦       
+¦   ¦       +---week
+¦   ¦               route.ts
+¦   ¦               
+¦   +---clients
+¦   ¦   ¦   page.tsx
+¦   ¦   ¦   
+¦   ¦   +---[id]
+¦   ¦       ¦   layout.tsx
+¦   ¦       ¦   page.tsx
+¦   ¦       ¦   Tabs.tsx
+¦   ¦       ¦   
+¦   ¦       +---deals
+¦   ¦       ¦       page.tsx
+¦   ¦       ¦       
+¦   ¦       +---edit
+¦   ¦       ¦       page.tsx
+¦   ¦       ¦       
+¦   ¦       +---files
+¦   ¦       ¦       AddFileButton.tsx
+¦   ¦       ¦       FilesClient.tsx
+¦   ¦       ¦       FilesToolbar.tsx
+¦   ¦       ¦       page.tsx
+¦   ¦       ¦       
+¦   ¦       +---info
+¦   ¦       ¦       page.tsx
+¦   ¦       ¦       
+¦   ¦       +---leads
+¦   ¦       ¦       page.tsx
+¦   ¦       ¦       
+¦   ¦       +---proposals
+¦   ¦               page.tsx
+¦   ¦               
+¦   +---schedule
+¦   ¦   ¦   DayGrid.tsx
+¦   ¦   ¦   MakeAppointmentModal.tsx
+¦   ¦   ¦   page.tsx
+¦   ¦   ¦   ScheduleClient.tsx
+¦   ¦   ¦   ScheduleHeader.tsx
+¦   ¦   ¦   StatusLegend.tsx
+¦   ¦   ¦   WeekGrid.tsx
+¦   ¦   ¦   _types.ts
+¦   ¦   ¦   
+¦   ¦   +---day
+¦   ¦   +---week
+¦   +---signin
+¦           page.tsx
+¦           
++---components
+¦       Modal.tsx
+¦       SiteNav.tsx
+¦       
++---lib
+¦       auth.ts
+¦       format.ts
+¦       prisma.ts
+¦       schedule-colors.ts
+¦       selects.ts
+¦       supabaseAdmin.ts
+¦       uploads.ts
+¦       uploads.ts.bak
+¦       
++---pages
+    +---api
+        +---accounting
+        ¦       export.ts
+        ¦       
+        +---auth
+        ¦       [...nextauth].ts
+        ¦       
+        +---automations
+        ¦       scan.ts
+        ¦       
+        +---files
+        ¦       attach.ts
+        ¦       sign-download.ts
+        ¦       signed-upload.ts
+        ¦       
+        +---payments
+        ¦       checkout.ts
+        ¦       
+        +---webhooks
+                contact-form.ts
+                inbound-email.ts
+                

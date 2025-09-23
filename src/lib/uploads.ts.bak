@@ -1,0 +1,61 @@
+import fs from "node:fs/promises";
+import path from "node:path";
+
+const UPLOAD_DIR = path.join(process.cwd(), "uploads");
+
+async function ensureUploadDir() {
+  try {
+    await fs.mkdir(UPLOAD_DIR, { recursive: true });
+  } catch {}
+}
+
+export function safeExt(name: string | null | undefined): string | null {
+  if (!name) return null;
+  const idx = name.lastIndexOf(".");
+  if (idx < 0) return null;
+  const ext = name.slice(idx + 1).toLowerCase();
+  return /^[a-z0-9]{1,8}$/.test(ext) ? ext : null;
+}
+
+export function contentTypeForExt(ext: string | null | undefined): string {
+  const e = (ext || "").toLowerCase();
+  const map: Record<string, string> = {
+    pdf: "application/pdf",
+    png: "image/png",
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    gif: "image/gif",
+    webp: "image/webp",
+    txt: "text/plain; charset=utf-8",
+    csv: "text/csv",
+    docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  };
+  return map[e] || "application/octet-stream";
+}
+
+export function makeStoredName(
+  displayName: string | null | undefined,
+  ext: string | null | undefined
+): string {
+  const chosen = (ext && ext.trim()) || safeExt(displayName) || "bin";
+  return `${crypto.randomUUID()}.${chosen.toLowerCase()}`;
+}
+
+export async function saveUploaded(
+  file: File,
+  storedName: string
+): Promise<{ bytes: number; fullPath: string }> {
+  const buf = Buffer.from(await file.arrayBuffer());
+  await ensureUploadDir();
+  const fullPath = path.join(UPLOAD_DIR, storedName);
+  await fs.writeFile(fullPath, buf);
+  return { bytes: buf.byteLength, fullPath };
+}
+
+export async function deleteStored(storedName: string): Promise<void> {
+  const fullPath = path.join(UPLOAD_DIR, storedName);
+  try {
+    await fs.unlink(fullPath);
+  } catch {}
+}
