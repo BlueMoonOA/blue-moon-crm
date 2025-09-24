@@ -1,0 +1,22 @@
+/* NAV */
+.site-nav{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid #e5e7eb}
+.site-nav__inner{max-width:1200px;margin:0 auto;padding:10px 16px;display:flex;justify-content:center;gap:10px}
+.btn{display:inline-block;padding:7px 14px;border:1px solid #d1d5db;border-radius:8px;background:#f9fafb;color:#111827;text-decoration:none;font-size:14px;line-height:1;cursor:pointer}
+.btn:hover{background:#f3f4f6}.btn--active{background:#111827;color:#fff;border-color:#111827}
+.page-container{max-width:1200px;margin:16px auto;padding:0 16px}
+
+/* SCHEDULE */
+.schedule-layout{display:grid;grid-template-columns:280px 1fr;gap:16px;align-items:start}
+.schedule-card{background:#fff;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden}
+.schedule-card__body{padding:12px}
+.mini-cal{width:100%;border-collapse:collapse;font-size:12px}
+.mini-cal th,.mini-cal td{text-align:center;padding:6px 4px}
+.mini-cal td button{width:32px;height:28px;border-radius:6px;border:1px solid transparent;background:#f9fafb}
+.mini-cal td button:hover{background:#f3f4f6}.mini-cal td button.is-today{border-color:#111827}.mini-cal td button.is-selected{background:#111827;color:#fff}
+.legend{position:sticky;bottom:12px;background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:10px 12px}
+.legend li{display:flex;align-items:center;gap:8px;margin:6px 0}.legend .dot{width:10px;height:10px;border-radius:999px;display:inline-block}
+.timeline{border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;background:#fff}
+.timeline__head{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:1px solid #e5e7eb;background:#fafafa}
+.timeline__grid{max-height:calc(100vh - 220px);overflow:auto}
+.time-row{display:grid;grid-template-columns:80px 1fr;border-bottom:1px solid #f1f5f9}
+.time-row__label{padding:8px 10px;font-size:12px;color:#6b7280}.time-row__cell{border-left:1px solid #f1f5f9;height:36px}
