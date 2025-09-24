@@ -1,0 +1,10 @@
+ΓÇëWARNΓÇë Unsupported engine: wanted: {"node":"20.x"} (current: {"node":"v22.19.0","pnpm":"9.15.9"})
+Environment variables loaded from .env
+Prisma schema loaded from prisma\schema.prisma
+
+Γ£ö Generated Prisma Client (v6.16.2) to .\node_modules\.pnpm\@prisma+client@6.16.2_prisma@6.16.2_typescript@5.9.2__typescript@5.9.2\node_modules\@prisma\client in 119ms
+
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+
+Tip: Need your database queries to be 1000x faster? Accelerate offers you that and more: https://pris.ly/tip-2-accelerate
+

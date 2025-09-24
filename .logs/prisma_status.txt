@@ -1,0 +1,8 @@
+ΓÇëWARNΓÇë Unsupported engine: wanted: {"node":"20.x"} (current: {"node":"v22.19.0","pnpm":"9.15.9"})
+Environment variables loaded from .env
+Prisma schema loaded from prisma\schema.prisma
+Datasource "db": PostgreSQL database "postgres", schema "public" at "aws-1-us-east-2.pooler.supabase.com:5432"
+
+9 migrations found in prisma/migrations
+
+Database schema is up to date!
