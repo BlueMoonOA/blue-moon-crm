@@ -1,6 +1,6 @@
 /** @type {import("next").NextConfig} */
 const nextConfig = {
-  eslint: { ignoreDuringBuilds: true },
-  typescript: { ignoreBuildErrors: true },
+  eslint: { ignoreDuringBuilds: false },      // back ON
+  typescript: { ignoreBuildErrors: true },    // keep relaxed temporarily
 };
 export default nextConfig;
