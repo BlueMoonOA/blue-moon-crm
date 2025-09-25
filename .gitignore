@@ -1,15 +1,32 @@
-﻿# Node / Next.js
+# dependencies & builds
 node_modules/
-.next/
-out/
 dist/
-.vercel/
-.vscode/
-.DS_Store
+build/
+.out/
+.next/
+.nuxt/
+coverage/
+tmp/
+*.log
 
-# Env & local data
+# env & secrets
 .env
 .env.*
+*.pem
+*.key
+*.p12
+service-account*.json
+
+# OS/editor junk
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.env.local
 uploads/
-prisma/*.db
-prisma/*.db-journal
+
+# Client uploaded photos
+public/client-photos/*.jpg
+public/client-photos/*.jpeg
+public/client-photos/*.png

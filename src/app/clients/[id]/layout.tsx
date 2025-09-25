@@ -1,7 +1,5 @@
-// src/app/clients/[id]/layout.tsx
-import ClientTabs from "./Tabs";
-
-export const dynamic = "force-dynamic";
+import React from "react";
+import ClientTabs from "@/components/ClientTabs";
 
 export default async function ClientLayout({
   children,
@@ -13,15 +11,9 @@ export default async function ClientLayout({
   const { id } = await params;
 
   return (
-    <section className="mx-auto max-w-6xl p-6">
-      {/* Single, canonical place for the client tabs */}
-      <ClientTabs id={id} />
+    <div className="mx-auto max-w-6xl px-4 py-6 space-y-6">
+      <ClientTabs clientId={id} />
       {children}
-    </section>
+    </div>
   );
 }
-
-
-
-
-

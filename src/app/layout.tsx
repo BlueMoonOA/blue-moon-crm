@@ -1,25 +1,19 @@
-﻿import type { Metadata } from "next";
+export const metadata = { title: "Blue Moon CRM" };
+
 import "./globals.css";
-import SiteNav from "@/components/SiteNav";
-import Providers from "./providers";
+import React from "react";
+import AppNav from "@/components/AppNav";
+import AuthSession from "@/components/AuthSession";
 
-export const metadata: Metadata = {
-  title: "Blue Moon CRM",
-};
-
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body>
-        <SiteNav />
-        <Providers>{children}</Providers>
+      <body className="min-h-screen bg-slate-100 text-slate-900">
+        <AuthSession>
+          <AppNav />
+          {children}
+        </AuthSession>
       </body>
     </html>
   );
 }
-
-

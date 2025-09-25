@@ -2,7 +2,7 @@
 
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import type { WeekPayload, WeekDay, Appt, Consultant } from "@/app/schedule/_types";
+import type { WeekPayload, WeekDay, Appt, Consultant } from "@/app/schedule/types";
 
 function ymd(input?: string | null): string {
   const now = new Date();

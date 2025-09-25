@@ -1,37 +1,33 @@
-// src/components/SiteNav.tsx
 "use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useMemo } from "react";
+import React from "react";
+
+const tabs = [
+  { href: "/", label: "Home" },
+  { href: "/clients", label: "Clients" },
+  { href: "/schedule", label: "Schedule" },
+];
 
 export default function SiteNav() {
   const pathname = usePathname();
 
-  const items = useMemo(
-    () => [
-      { href: "/", label: "Home" },
-      { href: "/clients", label: "Clients" },
-      { href: "/schedule", label: "Schedule" },
-    ],
-    []
-  );
-
   return (
     <nav className="site-nav">
       <div className="site-nav__inner">
-        {items.map((it) => {
+        {tabs.map((t) => {
           const active =
-            it.href === "/"
+            t.href === "/"
               ? pathname === "/"
-              : pathname === it.href || pathname?.startsWith(it.href + "/");
+              : pathname?.startsWith(t.href);
           return (
             <Link
-              key={it.href}
-              href={it.href}
-              className={`nav-btn ${active ? "is-active" : ""}`}
+              key={t.href}
+              href={t.href}
+              className={`btn${active ? " btn--active" : ""}`}
             >
-              {it.label}
+              {t.label}
             </Link>
           );
         })}
@@ -39,3 +35,4 @@ export default function SiteNav() {
     </nav>
   );
 }
+
