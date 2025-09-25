@@ -1,93 +1,97 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-function toDigits(s?: string | null): string | null {
-  if (!s) return null;
-  const d = ("" + s).replace(/\D+/g, "");
-  return d || null;
-}
-
-async function generateUniqueAccountNumber(): Promise<string> {
-  for (let i = 0; i < 8; i++) {
-    const head = Math.floor(Math.random() * 9) + 1;
-    const tail = Math.floor(Math.random() * 1_000_000_000).toString().padStart(9, "0");
-    const candidate = `${head}${tail}`;
-    const clash = await prisma.client.findFirst({
-      where: { accountNumber: candidate },
-      select: { id: true },
-    });
-    if (!clash) return candidate;
-  }
-  return String(Date.now()).slice(-10);
-}
-
 function parseEmails(input?: string | string[] | null): string[] {
   if (!input) return [];
-  if (Array.isArray(input)) {
-    return input.map((e) => (e || "").trim().toLowerCase()).filter(Boolean);
-  }
-  return (input as string)
+  if (Array.isArray(input)) return input.map(e => (e || "").trim().toLowerCase()).filter(Boolean);
+  return String(input)
     .split(/[,\s;]+/)
-    .map((e) => e.trim().toLowerCase())
+    .map(e => e.trim().toLowerCase())
     .filter(Boolean);
 }
 
-export async function POST(req: Request) {
+const ENABLE_BILL = process.env.ENABLE_BILLING_ADDR === "1";
+
+export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> }) {
   try {
-    const body = await req.json();
+    const { id } = await ctx.params;
 
-    const companyName = (body.companyName ?? "").trim();
-    if (!companyName) {
-      return NextResponse.json({ ok: false, error: "Company Name is required" }, { status: 400 });
+    // Base select (safe—fields that exist today)
+    const baseSelect: any = {
+      id: true,
+      accountNumber: true,
+      companyName: true,
+      address1: true, address2: true, city: true, state: true, zip: true,
+      workPhone1: true, workPhone2: true, cell: true, fax: true,
+      emails: true,
+      preferredContact: true,
+      primaryConsultant: true,
+      alert: true,
+      notes: true,
+      balanceCents: true,
+      lastApptAt: true,
+    };
+
+    // Only add billing fields if feature flag is ON (and you’ve added them to Prisma)
+    if (ENABLE_BILL) {
+      Object.assign(baseSelect, {
+        bill_address1: true, bill_address2: true, bill_city: true, bill_state: true, bill_zip: true,
+      });
     }
 
-    // soft-unique by companyName
-    const exists = await prisma.client.findFirst({
-      where: { companyName },
-      select: { id: true },
-    });
-    if (exists) {
-      return NextResponse.json(
-        { ok: false, error: "Client with this Company Name already exists." },
-        { status: 409 }
-      );
-    }
+    const c = await prisma.client.findUnique({ where: { id }, select: baseSelect });
+    if (!c) return NextResponse.json({ ok: false, error: "Not found" }, { status: 404 });
 
-    // PreferredContact enum mapping (default WORK1)
-    const pcRaw = (body.preferredContact ?? "WORK1").toString().toUpperCase();
-    const pref = ["WORK1","WORK2","CELL","EMAIL","FAX","OTHER"].includes(pcRaw) ? pcRaw : "WORK1";
-
-    const created = await prisma.client.create({
-      data: {
-        accountNumber: await generateUniqueAccountNumber(),
-        companyName,
-        name: companyName, // keep legacy 'name' in sync for now
-
-        address1: body.address1 ?? null,
-        address2: body.address2 ?? null,
-        city: body.city ?? null,
-        state: body.state ?? null,
-        zip: body.zip ?? null,
-
-        workPhone1: toDigits(body.workPhone1),
-        workPhone2: toDigits(body.workPhone2),
-        cell:       toDigits(body.cell),
-        fax:        toDigits(body.fax),
-
-        emails: parseEmails(body.emails ?? body.email),
-
-        preferredContact: pref as any,
-        primaryConsultant: body.primaryConsultant ?? null,
-
-        alert: body.alert ?? null,
-        // notes: body.notes ?? null,
-      },
-      select: { id: true, companyName: true, accountNumber: true },
-    });
-
-    return NextResponse.json({ ok: true, client: created }, { status: 201 });
+    return NextResponse.json({ ok: true, client: c });
   } catch (err: any) {
-    console.error("POST /api/clients error:", err);
-    return NextResponse.json({ ok: false, error: err?.message || "Create failed" }, { status: 500 });
+    console.error("GET client error", err);
+    return NextResponse.json({ ok: false, error: "Server error" }, { status: 500 });
   }
 }
+
+export async function PUT(req: Request, ctx: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await ctx.params;
+    const body = await req.json();
+
+    const data: any = {
+      companyName: (body.companyName ?? "").trim() || null,
+      address1: body.address1 ?? null,
+      address2: body.address2 ?? null,
+      city: body.city ?? null,
+      state: body.state ?? null,
+      zip: body.zip ?? null,
+
+      workPhone1: body.workPhone1 ?? null,
+      workPhone2: body.workPhone2 ?? null,
+      cell: body.cell ?? null,
+      fax: body.fax ?? null,
+
+      emails: parseEmails(body.emails ?? body.email),
+
+      preferredContact: body.preferredContact ?? null,
+      primaryConsultant: body.primaryConsultant ?? null,
+
+      alert: body.alert ?? null,
+      notes: body.notes ?? null,
+    };
+
+    // Only write billing fields if feature flag is ON (and DB has them)
+    if (ENABLE_BILL) {
+      Object.assign(data, {
+        bill_address1: body.bill_address1 ?? null,
+        bill_address2: body.bill_address2 ?? null,
+        bill_city: body.bill_city ?? null,
+        bill_state: body.bill_state ?? null,
+        bill_zip: body.bill_zip ?? null,
+      });
+    }
+
+    const updated = await prisma.client.update({ where: { id }, data, select: { id: true } });
+    return NextResponse.json({ ok: true, id: updated.id });
+  } catch (err: any) {
+    console.error("PUT client error", err);
+    return NextResponse.json({ ok: false, error: err?.message || "Update failed" }, { status: 500 });
+  }
+}
+
