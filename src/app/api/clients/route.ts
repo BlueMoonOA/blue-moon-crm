@@ -61,7 +61,7 @@ export async function POST(req: Request) {
       data: {
         accountNumber: await generateUniqueAccountNumber(),
         companyName,
-        name: companyName, // keep legacy field in sync for now
+        name: companyName, // keep legacy 'name' in sync for now
 
         address1: body.address1 ?? null,
         address2: body.address2 ?? null,
@@ -80,7 +80,7 @@ export async function POST(req: Request) {
         primaryConsultant: body.primaryConsultant ?? null,
 
         alert: body.alert ?? null,
-        // notes: body.notes ?? null, // optional
+        // notes: body.notes ?? null,
       },
       select: { id: true, companyName: true, accountNumber: true },
     });

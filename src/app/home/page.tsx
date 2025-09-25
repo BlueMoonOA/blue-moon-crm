@@ -237,7 +237,7 @@ export default function HomePage() {
             <tr><td className="px-3 py-3 text-slate-500" colSpan={6}>No matches.</td></tr>
           ) : (
             rows!.map(r=>(
-              <tr key={r.id} className="hover:bg-slate-50 cursor-pointer" onClick={()=>router.push(`/clients/${r.id}`)}>
+              <tr key={r.id} className="hover:bg-slate-50 cursor-pointer" onClick={()=>router.push(`/clients/${r.id}/overview`)}>
                 <td className="px-3 py-2">{r.name}</td>
                 <td className="px-3 py-2">{r.address1}</td>
                 <td className="px-3 py-2">{r.city}</td>
@@ -298,3 +298,5 @@ export default function HomePage() {
     </div>
   );
 }
+
+

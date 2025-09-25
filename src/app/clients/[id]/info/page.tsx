@@ -1,141 +1,61 @@
-// src/app/clients/[id]/info/page.tsx
-import Link from "next/link";
-import { notFound } from "next/navigation";
-import { prisma } from "@/lib/prisma";
-import type { Prisma } from "@prisma/client";
+"use client";
 
-export const dynamic = "force-dynamic";
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 
-/* helpers */
-function fmtPhone(v?: string | null) {
-  if (!v) return "—";
-  const d = v.replace(/\D+/g, "");
-  if (d.length === 10) return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
-  return v;
-}
+type Client = {
+  id: string;
+  companyName: string | null;
+  address1?: string | null;
+  city?: string | null;
+  state?: string | null;
+  zip?: string | null;
+  workPhone1?: string | null;
+};
 
-/* select */
-const clientSelect = {
-  id: true,
-  accountNumber: true,
-  name: true,
-  address1: true,
-  address2: true,
-  city: true,
-  state: true,
-  zip: true,
-  workPhone1: true,
-  workPhone2: true,
-  fax: true,
-  otherPhone: true,
-  emails: true,
-  notes: true,
-} as const;
+export default function ClientQuickView() {
+  const params = useParams<{ id: string }>();
+  const id = (params?.id as string) || "";
 
-type Base = Prisma.ClientGetPayload<{ select: typeof clientSelect }>;
-type ClientRow = Omit<Base, "notes"> & { notes: string | null };
+  const [data, setData] = useState<Client | null>(null);
+  const [err, setErr] = useState<string | null>(null);
 
-export default async function ClientInfoPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
+  useEffect(() => {
+    let abort = false;
+    (async () => {
+      try {
+        const res = await fetch(`/api/clients/${id}`);
+        const j = await res.json();
+        if (!res.ok || !j?.ok) throw new Error(j?.error || "Not found");
+        if (!abort) setData(j.client);
+      } catch (e: any) {
+        if (!abort) setErr(e?.message || "Error");
+      }
+    })();
+    return () => { abort = true; };
+  }, [id]);
 
-  const client = (await prisma.client.findUnique({
-    where: { id },
-    select: clientSelect,
-  })) as ClientRow | null;
-
-  if (!client) notFound();
-
-  const emails: string[] = Array.isArray(client.emails) ? client.emails : [];
-  const notesText = typeof client.notes === "string" ? client.notes.trim() : "";
+  if (err) {
+    return (
+      <div className="rounded-md border border-slate-300 bg-white shadow-sm p-4 text-sm text-red-600">
+        {err}
+      </div>
+    );
+  }
+  if (!data) {
+    return (
+      <div className="rounded-md border border-slate-300 bg-white shadow-sm p-4 text-sm text-slate-600">
+        Loading…
+      </div>
+    );
+  }
 
   return (
-    <main>
-      <div className="mb-5 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">
-          {client.name} — Info
-        </h1>
-
-        <Link
-          href={`/clients/${client.id}/edit`}
-          className="rounded bg-black text-white px-3 py-1.5 text-sm hover:opacity-90"
-        >
-          Edit Client Info
-        </Link>
-      </div>
-
-      <section className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        {/* Office */}
-        <div className="rounded border p-4">
-          <div className="text-sm text-gray-500 mb-3">Office Details</div>
-          <dl className="grid grid-cols-[10rem_1fr] gap-y-2 text-sm">
-            <dt className="text-gray-500">Account #</dt>
-            <dd>{client.accountNumber ?? "—"}</dd>
-            <dt className="text-gray-500">Address 1</dt>
-            <dd>{client.address1 ?? "—"}</dd>
-            <dt className="text-gray-500">Address 2</dt>
-            <dd>{client.address2 ?? "—"}</dd>
-            <dt className="text-gray-500">City</dt>
-            <dd>{client.city ?? "—"}</dd>
-            <dt className="text-gray-500">State</dt>
-            <dd>{client.state ?? "—"}</dd>
-            <dt className="text-gray-500">ZIP</dt>
-            <dd>{client.zip ?? "—"}</dd>
-          </dl>
-        </div>
-
-        {/* Phones + Emails */}
-        <div className="rounded border p-4">
-          <div className="text-sm text-gray-500 mb-3">Phones</div>
-          <dl className="grid grid-cols-[10rem_1fr] gap-y-2 text-sm">
-            <dt className="text-gray-500">Work #1</dt>
-            <dd>{fmtPhone(client.workPhone1)}</dd>
-            <dt className="text-gray-500">Work #2</dt>
-            <dd>{fmtPhone(client.workPhone2)}</dd>
-            <dt className="text-gray-500">Fax</dt>
-            <dd>{fmtPhone(client.fax)}</dd>
-            <dt className="text-gray-500">Other</dt>
-            <dd>{fmtPhone(client.otherPhone)}</dd>
-          </dl>
-
-          <div className="mt-4 text-sm">
-            <div className="text-gray-500 mb-1">Emails</div>
-            {emails.length === 0 ? (
-              <div>—</div>
-            ) : (
-              <ul className="list-disc list-inside space-y-1">
-                {emails.map((e, i) => (
-                  <li key={`${e}-${i}`}>
-                    <a className="text-blue-600 hover:underline" href={`mailto:${e}`}>
-                      {e}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* Notes */}
-      <section className="mt-6">
-        <div className="rounded border p-4">
-          <div className="text-sm text-gray-500 mb-2">Notes</div>
-          <div className="text-sm whitespace-pre-wrap">
-            {notesText || "—"}
-          </div>
-        </div>
-      </section>
-    </main>
+    <div className="rounded-md border border-slate-300 bg-white shadow-sm p-4 text-sm">
+      <div className="text-base font-semibold mb-2">{data.companyName}</div>
+      <div>{data.address1 || "—"}</div>
+      <div>{[data.city, data.state].filter(Boolean).join(", ")} {data.zip || ""}</div>
+      <div className="mt-2">Phone: {data.workPhone1 || "—"}</div>
+    </div>
   );
 }
-
-
-
-
-
-
-

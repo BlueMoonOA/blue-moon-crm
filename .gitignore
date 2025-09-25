@@ -25,3 +25,8 @@ Thumbs.db
 !.vscode/settings.json
 .env.local
 uploads/
+
+# Client uploaded photos
+public/client-photos/*.jpg
+public/client-photos/*.jpeg
+public/client-photos/*.png
