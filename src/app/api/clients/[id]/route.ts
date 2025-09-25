@@ -11,9 +11,9 @@ function parseEmails(input?: string | string[] | null): string[] {
     .filter(Boolean);
 }
 
-export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = await params;
+    const { id } = await ctx.params;
     const c = await prisma.client.findUnique({
       where: { id },
       select: {
@@ -27,7 +27,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         primaryConsultant: true,
         alert: true,
         notes: true,
+        bill_address1: true, bill_address2: true, bill_city: true, bill_state: true, bill_zip: true,
         balanceCents: true,
+        lastApptAt: true,
       }
     });
     if (!c) return NextResponse.json({ ok: false, error: "Not found" }, { status: 404 });
@@ -38,10 +40,10 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   }
 }
 
-export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function PUT(req: Request, ctx: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await ctx.params;
     const body = await req.json();
-    const { id } = await params;
 
     const data: any = {
       companyName: (body.companyName ?? "").trim() || null,
@@ -50,21 +52,31 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       city: body.city ?? null,
       state: body.state ?? null,
       zip: body.zip ?? null,
+
       workPhone1: (body.workPhone1 ?? null) || null,
       workPhone2: (body.workPhone2 ?? null) || null,
       cell: (body.cell ?? null) || null,
       fax: (body.fax ?? null) || null,
+
       emails: parseEmails(body.emails ?? body.email),
+
       preferredContact: (body.preferredContact ?? null) || null,
       primaryConsultant: (body.primaryConsultant ?? null) || null,
+
       alert: (body.alert ?? null) || null,
       notes: (body.notes ?? null) || null,
+
+      bill_address1: body.bill_address1 ?? null,
+      bill_address2: body.bill_address2 ?? null,
+      bill_city:     body.bill_city ?? null,
+      bill_state:    body.bill_state ?? null,
+      bill_zip:      body.bill_zip ?? null,
     };
 
     const updated = await prisma.client.update({
       where: { id },
       data,
-      select: { id: true }
+      select: { id: true },
     });
 
     return NextResponse.json({ ok: true, id: updated.id });

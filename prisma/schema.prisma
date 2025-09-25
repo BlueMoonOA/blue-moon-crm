@@ -428,6 +428,14 @@ model Client {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  // Billing (optional)
+  bill_address1  String?
+  bill_address2  String?
+  bill_city      String?
+  bill_state     String?
+  bill_zip       String?
+
+  lastApptAt     DateTime?
 }
 
 /**
