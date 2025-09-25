@@ -371,24 +371,13 @@ model File {
  */
 
 /// “Client / Office”
-enum PreferredContact {
-  WORK1
-  WORK2
-  CELL
-  EMAIL
-  FAX
-  OTHER
-}
-
 model Client {
   id String @id @default(cuid())
 
   /// Human-readable account number (string key)
   accountNumber String @unique
 
-  /// Preferred naming
-  companyName String  @unique
-  name        String?          // OLD (kept temporarily for back-compat)
+  name String
 
   // Demographics
   address1 String?
@@ -400,15 +389,10 @@ model Client {
   workPhone1 String?
   workPhone2 String?
   fax        String?
-  otherPhone String?    // OLD (kept)
-  cell       String?    // NEW
+  otherPhone String?
 
-  /// All office emails (lowercased)
+  /// All office emails; first one can be shown in Quick View
   emails String[]
-
-  // Preferences / meta
-  preferredContact  PreferredContact?
-  primaryConsultant String?
 
   specialty SpecialtyType?
   secondary SpecialtyType?
@@ -521,8 +505,3 @@ model Flag {
 
   appointments Appointment[]
 }
-
-
-
-
-
