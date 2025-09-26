@@ -1,0 +1,555 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL") // runtime (pgbouncer 6543)
+  directUrl = env("DIRECT_URL") // migrations (session 5432)
+}
+
+/**
+ * =========================
+ * Core Enums
+ * =========================
+ */
+
+enum Role {
+  ADMIN
+  SALES
+  VIEWER
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  ENGAGED
+  WORKING
+  NURTURE
+  QUALIFIED
+  DISQUALIFIED
+}
+
+enum DealStage {
+  NEW
+  ANALYSIS_DISCOVERY
+  PROPOSAL_SENT   @map("PROPOSAL")
+  QUALIFIED
+  REVIEW
+  NEGOTIATION
+  CLOSED_WON      @map("WON")
+  CLOSED_LOST     @map("LOST")
+}
+
+enum Priority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum ActivityType {
+  NOTE
+  EMAIL
+  CALL
+  FILE
+  STATUS_CHANGE
+}
+
+enum RelatedType {
+  DEAL
+  LEAD
+  CONTACT
+  CLIENT
+}
+
+enum ProposalStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+/**
+ * =========================
+ * NEW Enums (Clients / Appts)
+ * =========================
+ */
+
+/// Clinic/service categories shown on Client
+enum SpecialtyType {
+  GENERAL_FULL
+  GENERAL_EXAM_ONLY
+  OPTICAL_ONLY
+  MYOPIA_MANAGEMENT
+  DRY_EYE
+  VISION_THERAPY
+  SPORTS_MEDICINE
+  PEDIATRIC
+  LOW_VISION
+  CONTACT_LENS
+  OCULAR_DISEASE
+  GLAUCOMA
+  RETINA
+  CORNEA
+  REFRACTIVE_SURGERY
+  OCULOPLASTICS
+  NEURO_OPHTHALMOLOGY
+  CATARACT
+  SURGERY_CENTER
+  OTHER
+}
+
+/// Internal CRM appointment classifications (kept for Phase 1)
+enum AppointmentType {
+  DEMO
+  TRAINING
+  STRATEGY
+  FOLLOW_UP
+  ONBOARDING
+  SUPPORT
+  OTHER
+}
+
+/// Lifecycle of an appointment
+enum AppointmentStatus {
+  SCHEDULED
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+  RESCHEDULED
+}
+
+/**
+ * =========================
+ * Users/Auth
+ * =========================
+ */
+
+model User {
+  id             String   @id @default(cuid())
+  name           String?
+  email          String?  @unique
+  image          String?
+  role           Role     @default(SALES)
+  hashedPassword String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  accounts   Account[]
+  sessions   Session[]
+  activities Activity[]
+  Lead       Lead[]
+  Contact    Contact[]
+  Deal       Deal[]
+  Task       Task[]
+  EmailLog   EmailLog[]
+  Proposal   Proposal[]
+  File       File[]
+
+  // Appointments where this user is the consultant
+  appointments Appointment[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+/**
+ * =========================
+ * CRM: Leads / Contacts / Deals
+ * =========================
+ */
+
+model Lead {
+  id      String     @id @default(cuid())
+  name    String
+  company String?
+  email   String?
+  phone   String?
+  source  String?
+  status  LeadStatus @default(NEW)
+
+  // link a lead to a Client (optional)
+  clientId String?
+  client   Client? @relation(fields: [clientId], references: [id])
+
+  ownerId   String?
+  owner     User?    @relation(fields: [ownerId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  deals      Deal[]
+  activities Activity[]
+
+  @@index([clientId])
+  score           Int?
+  needs           String?    @db.Text
+  budgetTimeframe String?    @db.Text
+}
+
+model Contact {
+  id         String     @id @default(cuid())
+  name       String
+  company    String?
+  email      String?
+  phone      String?
+  ownerId    String?
+  owner      User?      @relation(fields: [ownerId], references: [id])
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  deals      Deal[]
+  activities Activity[]
+  Proposal   Proposal[]
+}
+
+model Deal {
+  id      String    @id @default(cuid())
+  title   String
+  company String?
+  value   Int       @default(0)
+  stage   DealStage @default(NEW)
+
+  // link a deal to a Client (optional)
+  clientId String?
+  client   Client? @relation(fields: [clientId], references: [id])
+
+  ownerId    String?
+  owner      User?      @relation(fields: [ownerId], references: [id])
+  leadId     String?
+  lead       Lead?      @relation(fields: [leadId], references: [id])
+  contactId  String?
+  contact    Contact?   @relation(fields: [contactId], references: [id])
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  closedAt   DateTime?
+  decisionMakers String[]?
+  lossReason LossReason?
+  tasks      Task[]
+  activities Activity[]
+  proposals  Proposal[]
+
+  @@index([clientId])
+  probability     Int?
+  decisionMakers  String[]
+  lossReason      DealLossReason?
+  lossNotes       String?    @db.Text
+}
+
+model Task {
+  id          String      @id @default(cuid())
+  title       String
+  relatedType RelatedType
+  relatedId   String
+  dueDate     DateTime
+  priority    Priority    @default(NORMAL)
+  done        Boolean     @default(false)
+  ownerId     String?
+  owner       User?       @relation(fields: [ownerId], references: [id])
+  createdAt   DateTime    @default(now())
+  Deal        Deal?       @relation(fields: [dealId], references: [id])
+  dealId      String?
+}
+
+model Activity {
+  id          String       @id @default(cuid())
+  type        ActivityType
+  text        String?      @db.Text
+  relatedType RelatedType
+  relatedId   String
+  at          DateTime     @default(now())
+  userId      String?
+  user        User?        @relation(fields: [userId], references: [id])
+  emailId     String?
+  fileId      String?
+  Lead        Lead?        @relation(fields: [leadId], references: [id])
+  leadId      String?
+  Contact     Contact?     @relation(fields: [contactId], references: [id])
+  contactId   String?
+  Deal        Deal?        @relation(fields: [dealId], references: [id])
+  dealId      String?
+}
+
+model EmailLog {
+  id          String      @id @default(cuid())
+  subject     String
+  from        String
+  to          String
+  cc          String?
+  date        DateTime
+  body        String?     @db.Text
+  relatedType RelatedType
+  relatedId   String
+  ownerId     String?
+  owner       User?       @relation(fields: [ownerId], references: [id])
+  createdAt   DateTime    @default(now())
+}
+
+/**
+ * =========================
+ * Proposals
+ * =========================
+ */
+
+model Proposal {
+  id          String         @id @default(cuid())
+  title       String
+  dealId      String?
+  deal        Deal?          @relation(fields: [dealId], references: [id])
+  contactId   String?
+  contact     Contact?       @relation(fields: [contactId], references: [id])
+  issueDate   DateTime
+  validUntil  DateTime
+  status      ProposalStatus @default(DRAFT)
+  discountPct Int            @default(0)
+  taxPct      Int            @default(0)
+  ownerId     String?
+  owner       User?          @relation(fields: [ownerId], references: [id])
+  notes       String?        @db.Text
+  items       ProposalItem[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}
+
+model ProposalItem {
+  id          String   @id @default(cuid())
+  proposalId  String
+  proposal    Proposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  description String
+  qty         Int      @default(1)
+  unitPrice   Int      @default(0) // cents
+}
+
+/**
+ * =========================
+ * Files
+ * =========================
+ */
+
+model File {
+  id           String      @id @default(cuid())
+  bucket       String
+  objectPath   String
+  name         String
+  mimeType     String
+  size         Int
+  relatedType  RelatedType
+  relatedId    String
+  uploadedById String?
+  uploadedBy   User?       @relation(fields: [uploadedById], references: [id])
+  createdAt    DateTime    @default(now())
+
+  // NEW:
+  description String?   @db.Text
+  scannedAt   DateTime?
+}
+
+/**
+ * =========================
+ * NEW: Clients & Appointments
+ * =========================
+ */
+
+/// “Client / Office”
+enum PreferredContact {
+  WORK1
+  WORK2
+  CELL
+  EMAIL
+  FAX
+  OTHER
+}
+
+model Client {
+  id String @id @default(cuid())
+
+  /// Human-readable account number (string key)
+  accountNumber String @unique
+
+  /// Preferred naming
+  companyName String  @unique
+  name        String?          // OLD (kept temporarily for back-compat)
+
+  // Demographics
+  address1 String?
+  address2 String?
+  city     String?
+  state    String?
+  zip      String?
+
+  workPhone1 String?
+  workPhone2 String?
+  fax        String?
+  otherPhone String?    // OLD (kept)
+  cell       String?    // NEW
+
+  /// All office emails (lowercased)
+  emails String[]
+
+  // Preferences / meta
+  preferredContact  PreferredContact?
+  primaryConsultant String?
+
+  specialty SpecialtyType?
+  secondary SpecialtyType?
+
+  /// Notes/alerts to surface on Quick View
+  alert String? @db.Text
+  notes String? @db.Text
+
+  /// Cents, positive for balance due, negative for credit
+  balanceCents Int @default(0)
+
+  // Relations
+  leads        Lead[]
+  deals        Deal[]
+  appointments Appointment[]
+  files        ClientFile[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  // Billing (optional)
+  bill_address1  String?
+  bill_address2  String?
+  bill_city      String?
+  bill_state     String?
+  bill_zip       String?
+
+  lastApptAt     DateTime?
+}
+
+/**
+ * =========================
+ * Admin-Customizable Appointment Types (NEW)
+ * =========================
+ */
+
+model ApptType {
+  id                 String   @id @default(cuid())
+  name               String   @unique
+  defaultDurationMin Int      @default(30)
+  color              String?
+  isActive           Boolean  @default(true)
+  sortOrder          Int      @default(0)
+  description        String?  @db.Text
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  appointments Appointment[]
+}
+
+model Appointment {
+  id String @id @default(cuid())
+
+  clientId String
+  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  /// Optional CRM user designated as the consultant
+  consultantId String?
+  consultant   User?   @relation(fields: [consultantId], references: [id])
+
+  startAt     DateTime
+  durationMin Int      @default(60)
+
+  // OLD enum (kept for Phase 1; will remove in Phase 2)
+  type AppointmentType @default(OTHER)
+
+  // NEW FK (nullable for backfill in Phase 1; will be required in Phase 2)
+  appointmentTypeId String?
+  appointmentType   ApptType? @relation(fields: [appointmentTypeId], references: [id])
+
+  status AppointmentStatus @default(SCHEDULED)
+  notes  String?           @db.Text
+
+  // Optional, customizable flag (NOT an enum)
+  flagId String?
+  flag   Flag?   @relation(fields: [flagId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([clientId, startAt])
+  @@index([consultantId, startAt])
+  @@index([appointmentTypeId])
+}
+
+/**
+ * =========================
+ * Client Files
+ * =========================
+ */
+
+model ClientFile {
+  id          String    @id @default(cuid())
+  clientId    String
+  storedName  String // actual filename on disk under /public/uploads
+  displayName String // shown in the UI
+  ext         String // "pdf", "png", "jpg", "jpeg"
+  contentType String?
+  description String?
+  fileDate    DateTime?
+  bytes       Int?
+  createdAt   DateTime  @default(now())
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId, createdAt])
+}
+
+/**
+ * =========================
+ * Admin-Customizable Flags
+ * =========================
+ */
+
+model Flag {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  color     String? // hex or tailwind token
+  createdAt DateTime @default(now())
+
+  appointments Appointment[]
+}
+
+enum DealLossReason {
+  PRICING
+  COMPETITION
+  BUDGET
+  NO_DECISION_TIMING
+  POOR_FIT_MISSING_FEATURES
+  SALES_PROCESS
+  RELATIONSHIP
+}
+

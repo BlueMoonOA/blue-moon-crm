@@ -23,33 +23,26 @@ enum Role {
 
 enum LeadStatus {
   NEW
-  CONTACTED
-  ENGAGED
   WORKING
   NURTURE
   QUALIFIED
   DISQUALIFIED
+  CONTACTED
+  ENGAGED
 }
 
 enum DealStage {
   NEW
-  ANALYSIS_DISCOVERY
-  PROPOSAL_SENT      @map("PROPOSAL")
   QUALIFIED
-  REVIEW
+  PROPOSAL
   NEGOTIATION
-  CLOSED_WON         @map("WON")
-  CLOSED_LOST        @map("LOST")
-}
-
-enum LossReason {
-  PRICING
-  COMPETITION
-  BUDGET // Budget / Lack of Funds
-  NO_DECISION // Timing / No Decision
-  POOR_FIT // Poor Product Fit / Missing Features
-  PROCESS_ISSUES // Sales Process Issues
-  RELATIONSHIP // Poor Relationship
+  WON
+  LOST
+  ANALYSIS_DISCOVERY
+  PROPOSAL_SENT
+  REVIEW
+  CLOSED_WON
+  CLOSED_LOST
 }
 
 enum Priority {
@@ -222,13 +215,13 @@ model Lead {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  deals           Deal[]
-  activities      Activity[]
+  deals      Deal[]
+  activities Activity[]
+
+  @@index([clientId])
   score           Int?
   needs           String?    @db.Text
   budgetTimeframe String?    @db.Text
-
-  @@index([clientId])
 }
 
 model Contact {
@@ -257,24 +250,24 @@ model Deal {
   clientId String?
   client   Client? @relation(fields: [clientId], references: [id])
 
-  ownerId        String?
-  owner          User?       @relation(fields: [ownerId], references: [id])
-  leadId         String?
-  lead           Lead?       @relation(fields: [leadId], references: [id])
-  contactId      String?
-  contact        Contact?    @relation(fields: [contactId], references: [id])
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
-  closedAt       DateTime?
-  probability    Int?
-  decisionMakers String[]    @default([])
-  lossReason     LossReason?
-  lossNotes      String?     @db.Text
-  tasks          Task[]
-  activities     Activity[]
-  proposals      Proposal[]
+  ownerId    String?
+  owner      User?      @relation(fields: [ownerId], references: [id])
+  leadId     String?
+  lead       Lead?      @relation(fields: [leadId], references: [id])
+  contactId  String?
+  contact    Contact?   @relation(fields: [contactId], references: [id])
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  closedAt   DateTime?
+  tasks      Task[]
+  activities Activity[]
+  proposals  Proposal[]
 
   @@index([clientId])
+  probability     Int?
+  decisionMakers  String[]
+  lossReason      DealLossReason?
+  lossNotes       String?    @db.Text
 }
 
 model Task {
@@ -409,7 +402,7 @@ model Client {
 
   /// Preferred naming
   companyName String  @unique
-  name        String? // OLD (kept temporarily for back-compat)
+  name        String?          // OLD (kept temporarily for back-compat)
 
   // Demographics
   address1 String?
@@ -421,8 +414,8 @@ model Client {
   workPhone1 String?
   workPhone2 String?
   fax        String?
-  otherPhone String? // OLD (kept)
-  cell       String? // NEW
+  otherPhone String?    // OLD (kept)
+  cell       String?    // NEW
 
   /// All office emails (lowercased)
   emails String[]
@@ -447,16 +440,16 @@ model Client {
   appointments Appointment[]
   files        ClientFile[]
 
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
   // Billing (optional)
-  bill_address1 String?
-  bill_address2 String?
-  bill_city     String?
-  bill_state    String?
-  bill_zip      String?
+  bill_address1  String?
+  bill_address2  String?
+  bill_city      String?
+  bill_state     String?
+  bill_zip       String?
 
-  lastApptAt DateTime?
+  lastApptAt     DateTime?
 }
 
 /**
@@ -550,3 +543,14 @@ model Flag {
 
   appointments Appointment[]
 }
+
+enum DealLossReason {
+  PRICING
+  COMPETITION
+  BUDGET
+  NO_DECISION_TIMING
+  POOR_FIT_MISSING_FEATURES
+  SALES_PROCESS
+  RELATIONSHIP
+}
+

@@ -1,93 +1,79 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { PreferredContact } from "@prisma/client";
 
-function toDigits(s?: string | null): string | null {
-  if (!s) return null;
-  const d = ("" + s).replace(/\D+/g, "");
-  return d || null;
-}
-
-async function generateUniqueAccountNumber(): Promise<string> {
-  for (let i = 0; i < 8; i++) {
-    const head = Math.floor(Math.random() * 9) + 1;
-    const tail = Math.floor(Math.random() * 1_000_000_000).toString().padStart(9, "0");
-    const candidate = `${head}${tail}`;
-    const clash = await prisma.client.findFirst({
-      where: { accountNumber: candidate },
-      select: { id: true },
-    });
-    if (!clash) return candidate;
-  }
-  return String(Date.now()).slice(-10);
-}
-
-function parseEmails(input?: string | string[] | null): string[] {
+function sanitizeEmails(input?: string): string[] {
   if (!input) return [];
-  if (Array.isArray(input)) {
-    return input.map((e) => (e || "").trim().toLowerCase()).filter(Boolean);
-  }
-  return (input as string)
-    .split(/[,\s;]+/)
-    .map((e) => e.trim().toLowerCase())
+  return input
+    .split(/[,\s;]+/).map(s => s.trim().toLowerCase())
     .filter(Boolean);
+}
+
+function genAccountNumber(name: string) {
+  // Simple: first 3 letters + time suffix (unique enough for dev; uniqueness enforced in DB)
+  const base = (name || "ACC").replace(/[^A-Za-z0-9]/g,"").toUpperCase().slice(0,6) || "ACC";
+  const suffix = Date.now().toString().slice(-6);
+  return `${base}-${suffix}`;
 }
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-
-    const companyName = (body.companyName ?? "").trim();
+    const body = await req.json().catch(() => ({}));
+    const companyName = (body.companyName || "").toString().trim();
     if (!companyName) {
-      return NextResponse.json({ ok: false, error: "Company Name is required" }, { status: 400 });
+      return NextResponse.json({ ok:false, error:"companyName is required" }, { status:400 });
     }
 
-    // soft-unique by companyName
-    const exists = await prisma.client.findFirst({
-      where: { companyName },
-      select: { id: true },
-    });
-    if (exists) {
-      return NextResponse.json(
-        { ok: false, error: "Client with this Company Name already exists." },
-        { status: 409 }
-      );
+    // PreferredContact enum guard (optional)
+    let preferredContact: PreferredContact | null = null;
+    if (body.preferredContact) {
+      const pc = String(body.preferredContact).toUpperCase().replace(/\s+/g, "_");
+      if (pc in PreferredContact) preferredContact = pc as PreferredContact;
     }
 
-    // PreferredContact enum mapping (default WORK1)
-    const pcRaw = (body.preferredContact ?? "WORK1").toString().toUpperCase();
-    const pref = ["WORK1","WORK2","CELL","EMAIL","FAX","OTHER"].includes(pcRaw) ? pcRaw : "WORK1";
+    // Handle accountNumber (required & unique in schema)
+    let accountNumber = (body.accountNumber || "").toString().trim();
+    if (!accountNumber) {
+      accountNumber = genAccountNumber(companyName);
+    }
+
+    // Normalize emails
+    const emails = Array.isArray(body.emails) ? body.emails : sanitizeEmails(body.emails);
 
     const created = await prisma.client.create({
       data: {
-        accountNumber: await generateUniqueAccountNumber(),
+        accountNumber,
         companyName,
-        name: companyName, // keep legacy 'name' in sync for now
-
+        name: body.name ?? null,
         address1: body.address1 ?? null,
         address2: body.address2 ?? null,
         city: body.city ?? null,
         state: body.state ?? null,
         zip: body.zip ?? null,
-
-        workPhone1: toDigits(body.workPhone1),
-        workPhone2: toDigits(body.workPhone2),
-        cell:       toDigits(body.cell),
-        fax:        toDigits(body.fax),
-
-        emails: parseEmails(body.emails ?? body.email),
-
-        preferredContact: pref as any,
+        workPhone1: body.workPhone1 ?? null,
+        workPhone2: body.workPhone2 ?? null,
+        fax: body.fax ?? null,
+        otherPhone: body.otherPhone ?? null,
+        cell: body.cell ?? null,
+        emails,
+        preferredContact,
         primaryConsultant: body.primaryConsultant ?? null,
-
+        specialty: body.specialty ?? null,
+        secondary: body.secondary ?? null,
         alert: body.alert ?? null,
-        // notes: body.notes ?? null,
+        notes: body.notes ?? null,
+        balanceCents: typeof body.balanceCents === "number" ? body.balanceCents : 0,
+        bill_address1: body.bill_address1 ?? null,
+        bill_address2: body.bill_address2 ?? null,
+        bill_city: body.bill_city ?? null,
+        bill_state: body.bill_state ?? null,
+        bill_zip: body.bill_zip ?? null,
       },
-      select: { id: true, companyName: true, accountNumber: true },
     });
 
-    return NextResponse.json({ ok: true, client: created }, { status: 201 });
+    return NextResponse.json({ ok:true, item: created });
   } catch (err: any) {
-    console.error("POST /api/clients error:", err);
-    return NextResponse.json({ ok: false, error: err?.message || "Create failed" }, { status: 500 });
+    console.error("POST /api/clients error", err);
+    return NextResponse.json({ ok:false, error: err?.message || "Server error" }, { status:500 });
   }
 }
